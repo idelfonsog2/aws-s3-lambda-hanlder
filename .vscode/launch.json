@@ -1,0 +1,40 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug aws-s3-lambda-hanlder",
+            "program": ".build/debug/aws-s3-lambda-hanlder",
+            "args": [],
+            "cwd": "${workspaceFolder:aws-s3-lambda-hanlder}",
+            "preLaunchTask": "swift: Build Debug aws-s3-lambda-hanlder"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Release aws-s3-lambda-hanlder",
+            "program": ".build/release/aws-s3-lambda-hanlder",
+            "args": [],
+            "cwd": "${workspaceFolder:aws-s3-lambda-hanlder}",
+            "preLaunchTask": "swift: Build Release aws-s3-lambda-hanlder"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug S3Handler",
+            "program": ".build/debug/S3Handler",
+            "args": [],
+            "cwd": "${workspaceFolder:aws-s3-lambda-handler}",
+            "preLaunchTask": "swift: Build Debug S3Handler"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Release S3Handler",
+            "program": ".build/release/S3Handler",
+            "args": [],
+            "cwd": "${workspaceFolder:aws-s3-lambda-handler}",
+            "preLaunchTask": "swift: Build Release S3Handler"
+        }
+    ]
+}
