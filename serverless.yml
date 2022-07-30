@@ -1,0 +1,142 @@
+service: stranded-app
+provider:
+  name: aws
+  runtime: provided.al2
+  architecture: arm64
+  region: us-east-2
+  stage: ${opt:stage, 'dev'}
+  httpApi:
+    cors: true
+
+  # Lambda layers are not supported for functions created with container images
+  ecr:
+    scanOnPush: true
+    images:
+      s3HandlerImage:
+        path: ./
+        file: Dockerfile.s3Handler
+        buildArgs:
+          EXEC_NAME: ${opt:stage}
+
+  environment:
+    IMAGES_S3_BUCKET: stranded-api-s3-images-${opt:stage}
+    SIGNED_URL_EXPIRATION: 300
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+          Resource: arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*
+
+custom:
+  topicName: SNSTopicImages
+package:
+  individually: true
+
+# Lambda layers are not supported for functions created with container images
+# layers:
+#   resources:
+    # path: .private
+
+functions:  
+  S3Handler:
+    environment:
+      STAGE: ${self:provider.stage}
+    handler: xyz
+    image:
+      name: s3HandlerImage
+    events:
+      - sns:
+          arn: !Ref 'SNSTopicImages'
+          topicName: ${self:custom.topicName}
+          displayName: ${self:custom.topicName}
+  
+resources:
+  Outputs:
+    SNSTopicImagesArn:
+      Description: The ARN for the images topic
+      Value: !Ref SNSTopicImages
+    SNSTopicPolicyArn:
+      Description: The ARN for the images topic
+      Value: !Ref SNSTopicPolicy
+  
+  Parameters:
+    paramBucketName:
+      Type: String
+      Description: Bucket Name
+      Default: ${self:provider.environment.IMAGES_S3_BUCKET}
+
+  Resources:
+    SNSTopicImages:  # step 1
+      Type: AWS::SNS::Topic
+
+    LambdaInvokePermission:
+      Type: AWS::Lambda::Permission
+      Properties:
+        Action: lambda:InvokeFunction
+        FunctionName: !Ref S3HandlerLambdaFunction
+        Principal: '*'
+
+    SNSTopicPolicy:
+      Type: AWS::SNS::TopicPolicy
+      Properties:
+        PolicyDocument:
+          Id: MyTopicPolicy
+          Version: '2012-10-17'
+          Statement:
+            - Sid: Statement-id
+              Effect: Allow
+              Principal:
+                Service: s3.amazonaws.com
+              Action: sns:Publish
+              Resource: !Ref 'SNSTopicImages'
+              Condition:
+                ArnLike:
+                  aws:SourceArn: !Join
+                    - ''
+                    - - 'arn:aws:s3:::'
+                      - !Ref 'paramBucketName'
+        Topics:
+          - !Ref 'SNSTopicImages'
+    
+    AttachmentBucket:
+      Type: AWS::S3::Bucket
+      DependsOn:
+        - SNSTopicPolicy
+      Properties:
+        AccessControl: BucketOwnerFullControl
+        BucketName: !Ref 'paramBucketName'
+        NotificationConfiguration:
+          TopicConfigurations:
+            - Topic: !Ref 'SNSTopicImages'
+              Event: s3:ObjectCreated:*
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+
+    BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref AttachmentBucket
+        PolicyDocument:
+            Id: "MyPolicy"
+            Version: "2012-10-17"
+            Statement:
+              - Sid: PublicReadForGetBucketObjects
+                Effect: Allow
+                Principal: '*'
+                Action: 's3:GetObject'
+                Resource: 'arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*'

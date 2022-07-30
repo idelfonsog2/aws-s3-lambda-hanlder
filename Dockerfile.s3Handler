@@ -1,0 +1,33 @@
+# syntax=docker/dockerfile:1
+
+# ================================
+# Build image
+# ================================
+FROM swift:5.6.1-amazonlinux2 as build
+
+RUN yum -y install git jq tar zip openssl-devel
+
+WORKDIR /build
+
+RUN mkdir -p /Sources/S3Handler/
+
+ADD /Sources/ ./Sources
+
+COPY Package.swift .
+
+RUN cd /build && swift build -c release
+
+RUN mkdir -p /var/task/
+
+RUN cp .build/release/S3Handler /var/task/S3Handler
+
+# ================================
+# Build image
+# ================================
+FROM swift:5.6.1-amazonlinux2
+
+WORKDIR /var/task
+RUN ln -s S3Handler bootstrap
+RUN chmod 755 ./bootstrap
+RUN chmod 755 ./S3Handler
+CMD ["/var/task/S3Handler"]

@@ -1,0 +1,47 @@
+name: Serverless Staging Deployment
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+env:
+  AWS_REGION : "us-east-2"
+permissions:
+      id-token: write
+      contents: read
+      
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout 
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Install Swift
+        uses: slashmo/install-swift@v0.1.0
+        with:
+          version: 5.6.0
+      - name: Install Serverless
+        uses: Teakowa/setup-serverless@v2.0.0
+        with:
+          serverless_version: 3.21.0
+          provider: aws
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      
+      - uses: docker-practice/actions-setup-docker@master
+      
+      - name: Build with Serverless 
+        run: ./scripts/serverless.sh
