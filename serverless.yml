@@ -46,7 +46,7 @@ functions:
     environment:
       STAGE: ${self:provider.stage}
     image:
-      name: s3HandlerImage
+      name: 's3HandlerImage'
     events:
       - sns:
           arn: !Ref 'SNSTopicImages'
