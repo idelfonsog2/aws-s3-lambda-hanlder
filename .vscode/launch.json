@@ -1,23 +1,6 @@
 {
     "configurations": [
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug aws-s3-lambda-hanlder",
-            "program": ".build/debug/aws-s3-lambda-hanlder",
-            "args": [],
-            "cwd": "${workspaceFolder:aws-s3-lambda-hanlder}",
-            "preLaunchTask": "swift: Build Debug aws-s3-lambda-hanlder"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Release aws-s3-lambda-hanlder",
-            "program": ".build/release/aws-s3-lambda-hanlder",
-            "args": [],
-            "cwd": "${workspaceFolder:aws-s3-lambda-hanlder}",
-            "preLaunchTask": "swift: Build Release aws-s3-lambda-hanlder"
-        },
+        
         {
             "type": "lldb",
             "request": "launch",

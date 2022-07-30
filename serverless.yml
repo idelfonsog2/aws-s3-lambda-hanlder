@@ -12,7 +12,7 @@ provider:
   ecr:
     scanOnPush: true
     images:
-      s3HandlerImage:
+      appImage:
         path: ./
         file: Dockerfile.s3Handler
         buildArgs:
@@ -46,7 +46,7 @@ functions:
     environment:
       STAGE: ${self:provider.stage}
     image:
-      name: 's3HandlerImage'
+      name: 'appImage'
     events:
       - sns:
           arn: !Ref 'SNSTopicImages'
